@@ -4,7 +4,8 @@ from flask_restful import Api
 
 import config as config
 from models import db, User
-from views import test
+from views import registro_usuario, test, login_usuario, tasks
+
 
 def create_flask_app():
     """Create flask application."""
@@ -29,6 +30,10 @@ def create_flask_app():
 def add_urls(app):
     api = Api(app)
     api.add_resource(test.TestView, "/test")
+    api.add_resource(registro_usuario.RegistroUsuarioView, "/signup")
+    api.add_resource(login_usuario.LoginUsuarioView, "/login")
+    api.add_resource(tasks.TasksListView, "/tasks")
+    api.add_resource(tasks.TaskView, "/tasks/<int:task_id>")
 
 
 app = create_flask_app()
