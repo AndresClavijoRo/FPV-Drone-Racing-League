@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token
 from sqlalchemy import exc
+import re
 
 user_schema = UserSchema()
 
@@ -27,7 +28,11 @@ class RegistroUsuarioView(Resource):
             return {"mensaje": "La contraseña debe contener al menos una letra mayúscula"}, 400
         if not any(char.islower() for char in password):
             return {"mensaje": "La contraseña debe contener al menos una letra minúscula"}, 400
-        
+
+        email = request.json["email"]
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            return {"mensaje": "El correo electrónico no es válido"}, 400
+
         # Check if username or email already exists
         existing_user = User.query.filter_by(
             username=request.json["username"]).first()
