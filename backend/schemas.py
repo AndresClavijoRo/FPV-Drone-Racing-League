@@ -22,3 +22,5 @@ class TaskSchema(SQLAlchemyAutoSchema):
 
     created_by = fields.Nested(UserSchema)
     created_by_id = fields.Int()
+    status = fields.Str()
+    

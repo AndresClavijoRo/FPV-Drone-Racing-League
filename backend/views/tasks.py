@@ -1,11 +1,12 @@
 from models import db, Task, TaskStatus
 from flask import request
-from schemas import UserSchema
+from schemas import TaskSchema
 from flask_restful import Resource
 from flask_jwt_extended import current_user, jwt_required
 from werkzeug.utils import secure_filename
 import os
 from views.validaciones_video import validaciones_video
+from celery_tasks import process_task
 
 
 class TasksListView(Resource):
@@ -13,14 +14,15 @@ class TasksListView(Resource):
     @jwt_required()
     def get(self):
 
-        max_registros = request.args.get('max', default=100, type=int)
-        order = request.args.get('order', default=0, type=int)
+        max_registros = request.args.get("max", default=100, type=int)
+        order = request.args.get("order", default=0, type=int)
 
-        tasks = Task.query.filter_by(
-            created_by_id=current_user.id
-        ).order_by(
-            Task.id.asc() if order == 0 else Task.id.desc()
-        ).limit(max_registros).all()
+        tasks = (
+            Task.query.filter_by(created_by_id=current_user.id)
+            .order_by(Task.id.asc() if order == 0 else Task.id.desc())
+            .limit(max_registros)
+            .all()
+        )
 
         return {
             "tasks": [
@@ -33,13 +35,13 @@ class TasksListView(Resource):
                 for task in tasks
             ]
         }
-    
+
     @jwt_required()
     def post(self):
         # Comprueba si el archivo de video está presente en la solicitud
-        if 'video' not in request.files:
+        if "video" not in request.files:
             return {"mensaje": "No se encontró el archivo de video"}, 400
-        video = request.files['video']
+        video = request.files["video"]
 
         validaciones = validaciones_video(video)
 
@@ -48,20 +50,22 @@ class TasksListView(Resource):
 
         # Guarda el archivo de video
         filename = secure_filename(video.filename)
-        video.save(os.path.join('uploads', filename))
+        video.save(os.path.join("uploads", filename))
 
         try:
             # Crea una nueva tarea
             task = Task(
                 created_by_id=current_user.id,
                 file_name=filename,
-                video_path=os.path.join('uploads', filename),
-                status=TaskStatus.UPLOADED
+                video_path=os.path.join("uploads", filename),
+                status=TaskStatus.UPLOADED,
             )
             db.session.add(task)
             db.session.commit()
+            process_task(task.id)
             return {
                 "mensaje": "Tarea Creada Exitosamente",
+                "id": task.id,
             }, 201
         except Exception as e:
             return {"mensaje": str(e)}, 500
@@ -71,8 +75,7 @@ class TaskView(Resource):
     @jwt_required()
     def get(self, task_id):
         task = Task.query.filter_by(
-            id=task_id,
-            created_by_id=current_user.id
+            id=task_id, created_by_id=current_user.id
         ).one_or_none()
 
         if task is None:
@@ -88,8 +91,7 @@ class TaskView(Resource):
     @jwt_required()
     def delete(self, task_id):
         task = Task.query.filter_by(
-            id=task_id,
-            created_by_id=current_user.id
+            id=task_id, created_by_id=current_user.id
         ).one_or_none()
 
         if task is None:

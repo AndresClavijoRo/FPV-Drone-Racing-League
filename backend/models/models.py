@@ -19,6 +19,10 @@ class FileValidFormats(enum.Enum):
     """File valid formats."""
     MP4 = "mp4"
 
+    @classmethod
+    def is_valid_format( cls,extension: str) -> bool:
+        """Check if the extension is valid."""
+        return extension in [a.value for a in cls]
 
 class TaskStatus(enum.Enum):
     """Task status."""
