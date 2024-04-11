@@ -62,7 +62,7 @@ class TasksListView(Resource):
             )
             db.session.add(task)
             db.session.commit()
-            process_task(task.id)
+            process_task.delay(task.id)
             return {
                 "mensaje": "Tarea Creada Exitosamente",
                 "id": task.id,
