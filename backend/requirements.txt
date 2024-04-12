@@ -1,3 +1,4 @@
+gunicorn==21.2.0
 amqp==5.2.0
 aniso8601==9.0.1
 async-timeout==4.0.3
@@ -31,7 +32,7 @@ packaging==24.0
 Pillow==9.5.0
 proglog==0.1.10
 prompt-toolkit==3.0.43
-psycopg2==2.9.9
+psycopg2-binary==2.9.9
 PyJWT==2.8.0
 python-dateutil==2.9.0.post0
 pytz==2024.1
