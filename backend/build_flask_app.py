@@ -4,7 +4,7 @@ from flask_restful import Api
 from celery import Celery, Task
 
 import config as config
-from models import db, User
+from models import User
 from views import registro_usuario, test, login_usuario, tasks
 
 
@@ -32,8 +32,7 @@ def create_flask_app():
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
         identity = jwt_data["sub"]
-        return User.query.filter_by(id=identity).one_or_none()
-    db.init_app(app)    
+        return User.query.filter_by(id=identity).one_or_none()  
     return app
 
 

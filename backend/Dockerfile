@@ -1,4 +1,6 @@
 FROM python:3.10
+#Make upload directory
+RUN mkdir -p /srv/upload
 # Set the working directory in the container to /backend
 WORKDIR /backend
 # Copy the current directory contents into the container at /backend

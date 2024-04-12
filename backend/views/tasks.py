@@ -50,14 +50,15 @@ class TasksListView(Resource):
 
         # Guarda el archivo de video
         filename = secure_filename(video.filename)
-        video.save(os.path.join("uploads", filename))
+        video_path = f'{os.getenv("UPLOAD_FOLDER")}/{filename}'
+        video.save(video_path)
 
         try:
             # Crea una nueva tarea
             task = Task(
                 created_by_id=current_user.id,
                 file_name=filename,
-                video_path=os.path.join("uploads", filename),
+                video_path=video_path,
                 status=TaskStatus.UPLOADED,
             )
             db.session.add(task)
