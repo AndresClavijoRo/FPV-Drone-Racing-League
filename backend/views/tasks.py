@@ -23,14 +23,15 @@ class TasksListView(Resource):
             .limit(max_registros)
             .all()
         )
-
+        url = request.url.replace("/tasks", "")
         return {
             "tasks": [
                 {
                     "id": task.id,
                     "file_name": task.file_name,
                     "status": task.status.value,
-                    "processed_video_path": task.processed_video_path,
+                    "uploaded_video_path": url + task.video_path,
+                    "processed_video_path": url + task.processed_video_path if task.processed_video_path else None,
                 }
                 for task in tasks
             ]

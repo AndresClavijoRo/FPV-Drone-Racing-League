@@ -7,7 +7,10 @@ WORKDIR /backend
 COPY . .
 # Install any needed packages specified in requirements.txt
 RUN pip install -r requirements.txt
+
+#Install ffmpeg
+RUN apt-get update -y 
+RUN apt-get install ffmpeg libsm6 libxext6  -y
 # Make port 8000 available to the world outside this container
 EXPOSE 8000
-# run app
-CMD ["gunicorn", "--workers=4" ,"app:app", "--bind", "0.0.0.0:8000"]
+
