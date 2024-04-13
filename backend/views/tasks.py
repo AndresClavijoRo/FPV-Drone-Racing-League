@@ -98,8 +98,7 @@ class TaskView(Resource):
 
         if task is None:
             return {"mensaje": "Tarea no encontrada"}, 404
-        url = request.url.replace("/tasks", "")
-        return get_task_detail(task, url)
+        return get_task_detail(task)
 
     @jwt_required()
     def delete(self, task_id):
