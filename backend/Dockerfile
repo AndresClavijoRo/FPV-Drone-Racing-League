@@ -9,7 +9,7 @@ ADD ./requirements.txt /backend/requirements.txt
 RUN pip install -r requirements.txt
 #Install ffmpeg
 RUN apt-get update -y 
-RUN apt-get install ffmpeg libsm6 libxext6  -y
+RUN apt-get install ffmpeg  -y
 # Copy the current directory contents into the container at /backend
 ADD . /backend
 # Make port 8000 available to the world outside this container

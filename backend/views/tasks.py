@@ -55,9 +55,9 @@ class TasksListView(Resource):
     @jwt_required()
     def post(self):
         # Comprueba si el archivo de video está presente en la solicitud
-        if "video" not in request.files:
+        if "fileName" not in request.files:
             return {"mensaje": "No se encontró el archivo de video"}, 400
-        video = request.files["video"]
+        video = request.files["fileName"]
 
         validaciones = validaciones_video(video)
 

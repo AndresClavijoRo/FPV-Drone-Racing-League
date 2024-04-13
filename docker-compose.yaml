@@ -41,15 +41,8 @@ services:
     build: './backend'
     restart: on-failure
     command: celery -A make_celery  worker --loglevel INFO
-    environment:
-      - UPLOAD_FOLDER=/srv/upload
-      - DATABASE_SERVER=db_backend:5432/backend_ifpv
-      - DATABASE_USER=ifpv_user
-      - DATABASE_PASS=ifpv_pass
-      - CELERY_BROKER_URL=redis://redis_broker:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis_broker:6379/0
-      - ROOT_SERVER_URL=http://localhost:8080/backend-service
-
+    env_file:
+      - .env
     depends_on:
       database:
         condition: service_healthy
@@ -60,14 +53,8 @@ services:
       - upload-files:/srv/upload
     build: './backend'
     restart: on-failure
-    environment:
-      - UPLOAD_FOLDER=/srv/upload
-      - DATABASE_SERVER=db_backend:5432/backend_ifpv
-      - DATABASE_USER=ifpv_user
-      - DATABASE_PASS=ifpv_pass
-      - CELERY_BROKER_URL=redis://redis_broker:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis_broker:6379/0
-      - ROOT_SERVER_URL=http://localhost:8080/backend-service
+    env_file:
+      - .env
     depends_on:
       database:
         condition: service_healthy
