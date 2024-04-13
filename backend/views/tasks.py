@@ -7,6 +7,33 @@ from werkzeug.utils import secure_filename
 import os
 from views.validaciones_video import validaciones_video
 from celery_tasks import process_task
+import config
+
+def get_task_detail(task: Task) -> dict:
+    url = config.ROOT_SERVER_URL
+    return {
+        "id": task.id,
+        "file_name": task.file_name,
+        "status": task.status.value,
+        "uploaded_video_path": url + task.video_path,
+        "processed_video_path": (
+            url + task.processed_video_path if task.processed_video_path else None
+        ),
+        "created_at": task.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_at": (
+            task.updated_at.strftime("%Y-%m-%d %H:%M:%S") if task.updated_at else None
+        ),
+        "processing_started_at": (
+            task.processing_started_at.strftime("%Y-%m-%d %H:%M:%S")
+            if task.processing_started_at
+            else None
+        ),
+        "processing_ended_at": (
+            task.processing_ended_at.strftime("%Y-%m-%d %H:%M:%S")
+            if task.processing_ended_at
+            else None
+        )
+    }
 
 
 class TasksListView(Resource):
@@ -23,19 +50,7 @@ class TasksListView(Resource):
             .limit(max_registros)
             .all()
         )
-        url = request.url.replace("/tasks", "")
-        return {
-            "tasks": [
-                {
-                    "id": task.id,
-                    "file_name": task.file_name,
-                    "status": task.status.value,
-                    "uploaded_video_path": url + task.video_path,
-                    "processed_video_path": url + task.processed_video_path if task.processed_video_path else None,
-                }
-                for task in tasks
-            ]
-        }
+        return {"tasks": [get_task_detail(task) for task in tasks]}
 
     @jwt_required()
     def post(self):
@@ -65,10 +80,7 @@ class TasksListView(Resource):
             db.session.add(task)
             db.session.commit()
             process_task.delay(task.id)
-            return {
-                "mensaje": "Tarea Creada Exitosamente",
-                "id": task.id,
-            }, 201
+            return get_task_detail(task), 201
         except Exception as e:
             return {"mensaje": str(e)}, 500
 
@@ -82,13 +94,8 @@ class TaskView(Resource):
 
         if task is None:
             return {"mensaje": "Tarea no encontrada"}, 404
-
-        return {
-            "id": task.id,
-            "file_name": task.file_name,
-            "status": task.status.value,
-            "processed_video_path": task.processed_video_path,
-        }
+        url = request.url.replace("/tasks", "")
+        return get_task_detail(task, url)
 
     @jwt_required()
     def delete(self, task_id):

@@ -48,6 +48,8 @@ services:
       - DATABASE_PASS=ifpv_pass
       - CELERY_BROKER_URL=redis://redis_broker:6379/0
       - CELERY_RESULT_BACKEND=redis://redis_broker:6379/0
+      - ROOT_SERVER_URL=http://localhost:8080/backend-service
+
     depends_on:
       database:
         condition: service_healthy
@@ -65,23 +67,14 @@ services:
       - DATABASE_PASS=ifpv_pass
       - CELERY_BROKER_URL=redis://redis_broker:6379/0
       - CELERY_RESULT_BACKEND=redis://redis_broker:6379/0
+      - ROOT_SERVER_URL=http://localhost:8080/backend-service
     depends_on:
       database:
         condition: service_healthy
 volumes:
   postgresql-data:
     driver: local
-    driver_opts:
-      type: none
-      # Cambiar esta ruta por una existente en la maquina fisica
-      device: /run/media/tamino/BE077D8438DAEB37/Maestria/datos
-      o: bind
     name: postgresql-data
   upload-files:
     driver: local
-    driver_opts:
-      type: none
-      # Cambiar esta ruta por una existente en la maquina fisica
-      device: /run/media/tamino/BE077D8438DAEB37/Maestria/videos
-      o: bind
     name: upload-files
