@@ -14,10 +14,21 @@ class User(db.Model):
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), server_onupdate=db.func.now())
     tasks = db.relationship("Task", backref="created_by", lazy=True)
 
+
+class FileValidFormats(enum.Enum):
+    """File valid formats."""
+    MP4 = "mp4"
+
+    @classmethod
+    def is_valid_format( cls,extension: str) -> bool:
+        """Check if the extension is valid."""
+        return extension in [a.value for a in cls]
+
 class TaskStatus(enum.Enum):
     """Task status."""
     UPLOADED = "uploaded"
     PROCESSED = "processed"
+
 
 class Task(db.Model):
     """Tasks table."""
@@ -32,4 +43,3 @@ class Task(db.Model):
     processing_started_at = db.Column(db.DateTime, nullable=True)
     processing_ended_at = db.Column(db.DateTime, nullable=True)
 
-   
