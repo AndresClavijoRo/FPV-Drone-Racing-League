@@ -9,6 +9,10 @@ from views.validaciones_video import validaciones_video
 from celery_tasks import process_task
 import config
 
+def delete_file(file_path: str):
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
 def get_task_detail(task: Task) -> dict:
     url = config.ROOT_SERVER_URL
     return {
@@ -108,5 +112,9 @@ class TaskView(Resource):
 
         db.session.delete(task)
         db.session.commit()
+
+        delete_file(task.video_path)
+        if task.processed_video_path:
+            delete_file(task.processed_video_path)
 
         return {"mensaje": "Tarea eliminada exitosamente"}, 200

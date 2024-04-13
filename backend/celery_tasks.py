@@ -26,6 +26,9 @@ def change_aspect_ratio(clip: VideoFileClip) -> VideoFileClip:
 @shared_task(ignore_result=False)
 def process_task(task_id: int):
     task: Task = Task.query.get(task_id)
+    if not task:
+        logger.error(f"Task with id {task_id} not found")
+        return
     task.processing_started_at = datetime.datetime.now()
     try:
         video = VideoFileClip(task.video_path)
