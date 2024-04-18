@@ -1,17 +1,16 @@
-from models import db, Task, TaskStatus
+import os
+import uuid
+
 from flask import request
-from schemas import TaskSchema
 from flask_restful import Resource
 from flask_jwt_extended import current_user, jwt_required
 from werkzeug.utils import secure_filename
-import os
+
+from models import db, Task, TaskStatus
 from views.validaciones_video import validaciones_video
 from celery_tasks import process_task
 import config
 
-def delete_file(file_path: str):
-    if os.path.exists(file_path):
-        os.remove(file_path)
 
 def get_task_detail(task: Task) -> dict:
     url = config.ROOT_SERVER_URL
@@ -70,9 +69,11 @@ class TasksListView(Resource):
 
         # Guarda el archivo de video
         filename = secure_filename(video.filename)
-        video_path = f'{os.getenv("UPLOAD_FOLDER")}/{filename}'
+        path = f'{config.UPLOAD_FOLDER}/{uuid.uuid4()}'
+        video_path = f'{path}/{filename}'
+        if not os.path.exists(path):
+            os.makedirs(path)
         video.save(video_path)
-
         try:
             # Crea una nueva tarea
             task = Task(
@@ -108,12 +109,16 @@ class TaskView(Resource):
 
         if task is None:
             return {"mensaje": "Tarea no encontrada"}, 404
-
+        if task.status != TaskStatus.PROCESSED:
+            return {"mensaje": "No se puede eliminar una tarea no procesada"}, 400
+    
         db.session.delete(task)
         db.session.commit()
 
-        delete_file(task.video_path)
-        if task.processed_video_path:
-            delete_file(task.processed_video_path)
-
+        folder_path = os.path.dirname(task.video_path)
+        for file in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file)
+            os.remove(file_path)
+        os.rmdir(folder_path)
+       
         return {"mensaje": "Tarea eliminada exitosamente"}, 200

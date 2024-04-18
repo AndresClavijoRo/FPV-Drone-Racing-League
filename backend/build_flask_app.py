@@ -17,7 +17,7 @@ def create_flask_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["JWT_SECRET_KEY"] = config.SECRET_KEY
     app.config["PROPAGATE_EXCEPTIONS"] = True
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=30)
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=config.HOURS_TO_EXPIRE)
     app.config.from_mapping(
         CELERY=dict(
             broker_url=config.CELERY_BROKER_URL,
