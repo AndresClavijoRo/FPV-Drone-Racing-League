@@ -1,27 +1,4 @@
 services:
-  database:
-    container_name: db_backend
-    volumes:
-      - postgresql-data:/var/lib/postgresql/data
-    image: 'postgres:latest'
-    restart: always
-    shm_size: 128mb
-    ports: 
-      - "5555:5432"
-    environment:
-      - POSTGRES_DB=backend_ifpv
-      - POSTGRES_USER=ifpv_user
-      - POSTGRES_PASSWORD=ifpv_pass
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER -h localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-  redis:
-    container_name: redis_broker
-    image: redis:alpine
-    ports:
-      - 6379:6379
   nginx:
     container_name: nginx
     image: nginx:latest
@@ -43,9 +20,6 @@ services:
     command: celery -A make_celery  worker --loglevel INFO
     env_file:
       - .env
-    depends_on:
-      database:
-        condition: service_healthy
   app:
     container_name: backend_ifpv
     command: gunicorn --workers=4  app:app  --bind 0.0.0.0:8000
@@ -55,13 +29,7 @@ services:
     restart: on-failure
     env_file:
       - .env
-    depends_on:
-      database:
-        condition: service_healthy
 volumes:
-  postgresql-data:
-    driver: local
-    name: postgresql-data
   upload-files:
     driver: local
     name: upload-files
