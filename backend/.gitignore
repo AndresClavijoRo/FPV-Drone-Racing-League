@@ -90,3 +90,7 @@ ENV/
 
 .DS_Store
 .vscode
+celery_results.sqlite
+
+load_testing/*
+load_testing_video.mp4

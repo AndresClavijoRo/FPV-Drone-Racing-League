@@ -1,5 +1,6 @@
 import datetime
 import logging
+import uuid
 
 from celery import shared_task
 
@@ -36,9 +37,13 @@ def process_task(task_id: int):
         # Crop to 20 seconds
         processed_video = processed_video.subclip(0, min(20, processed_video.duration))
         # Add frames for log
-        image = change_aspect_ratio((
-            ImageClip("fpv_logo.png").set_duration(1).set_position(("center", "center"))
-        ))
+        image = change_aspect_ratio(
+            (
+                ImageClip("fpv_logo.png")
+                .set_duration(1)
+                .set_position(("center", "center"))
+            )
+        )
         processed_video_path = task.video_path.replace(".mp4", "_processed.mp4")
         final_video = CompositeVideoClip(
             [
@@ -47,7 +52,9 @@ def process_task(task_id: int):
                 image.set_start(processed_video.duration + 1),
             ]
         )
-        final_video.write_videofile(processed_video_path)
+        final_video.write_videofile(
+            processed_video_path, temp_audiofile=f"{uuid.uuid4()}.mp3", remove_temp=True
+        )
         task.processed_video_path = processed_video_path
         task.status = TaskStatus.PROCESSED
     except Exception:
