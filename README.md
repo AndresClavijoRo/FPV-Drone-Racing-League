@@ -11,3 +11,11 @@ Esto expondra la aplicación en el puerto `8080`, la documentación la encuentra
 
 Correr el servicio web
 sudo docker compose -f docker-compose-web-server.yaml  up --build
+
+Correr el worker
+
+sudo docker compose -f worker-docker-compose.yml  up --build
+
+Correr poruebas de esters para el wroker
+
+sudo docker compose -f worker-load-tests.yml  up --build
