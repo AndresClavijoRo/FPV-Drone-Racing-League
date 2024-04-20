@@ -2,7 +2,7 @@ services:
   celery_worker:
     container_name: celery_worker
     volumes:
-      - upload-files:/var/nfs/shared_folder/uploads
+      - upload-files:/var/nfs/videos
     build: './backend'
     restart: on-failure
     command: celery -A make_celery  worker --loglevel INFO
