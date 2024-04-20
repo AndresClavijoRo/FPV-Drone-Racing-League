@@ -37,6 +37,7 @@ psycopg2==2.9.9
 psycopg2-binary==2.9.9
 PyJWT==2.8.0
 python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
 pytz==2024.1
 redis==5.0.3
 requests==2.31.0
