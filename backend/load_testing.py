@@ -24,7 +24,7 @@ WAIT_PER_TAKS = 60
 MAX_CPU = 0.95 * 100
 MAX_DURATION = 10
 VIDEO_PATH = os.path.abspath("load_testing_video.mp4")
-
+BASE_PATH = "/var/backend/load_testing"
 
 def create_task(folder_path: str, total_tasks: int) -> List[Task]:
     """Create queued tasks."""
@@ -97,12 +97,12 @@ def write_results(
                         else None
                     ),
                     (
-                        task.processing_started_at.timestamp()
+                        task.processing_started_at.isoformat()
                         if task.processing_started_at
                         else None
                     ),
                     (
-                        task.processing_ended_at.timestamp()
+                        task.processing_ended_at.isoformat()
                         if task.processing_ended_at
                         else None
                     ),
@@ -228,7 +228,7 @@ def load_test(flask_app, total_tasks: int, total_minutes: int):
     start_at = datetime.datetime.now()
     print(f"Starting load testing at {start_at} and max {total_minutes} minutes")
     # Create results folder
-    folder_path = f"load_testing/{start_at.isoformat()}"
+    folder_path = f"{BASE_PATH}/{start_at.isoformat()}"
     os.makedirs(folder_path, exist_ok=True)
     initial_concurrency = 1
     keep_going = run_scenary(flask_app, total_tasks, initial_concurrency, folder_path)
