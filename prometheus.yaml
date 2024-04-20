@@ -35,3 +35,7 @@ scrape_configs:
   - job_name: "webserver"
     static_configs:
       - targets: ["35.192.222.12:9100"]
+
+  - job_name: "worker"
+    static_configs:
+      - targets: ["34.170.120.228:9100"]
