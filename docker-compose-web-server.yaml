@@ -23,4 +23,7 @@ services:
 volumes:
   upload-files:
     driver: local
-    name: upload-files
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/var/nfs/videos'
