@@ -1,0 +1,14 @@
+services:
+  celery_worker:
+    container_name: celery_worker
+    volumes:
+      - upload-files:/var/nfs/shared_folder/uploads
+    build: './backend'
+    restart: on-failure
+    command: celery -A make_celery  worker --loglevel INFO
+    env_file:
+      - .env.worker
+volumes:
+  upload-files:
+    driver: local
+    name: upload-files
