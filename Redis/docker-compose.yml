@@ -1,0 +1,10 @@
+# services-> Configuracion de los contenedores a paertir de una imagen
+services:         
+  redis:
+    container_name: redis_broker
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 6379:6379    
+    restart: always
