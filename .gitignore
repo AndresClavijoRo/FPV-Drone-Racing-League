@@ -1,3 +1,4 @@
 .idea/
 backend/.idea/
 .DS_Store
+.env
