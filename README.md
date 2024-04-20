@@ -19,5 +19,5 @@ Correr el servicio web
 Correr el worker
 ```sudo docker compose -f worker-docker-compose.yml  up --build```
 
-Correr poruebas de esters para el wroker
+Correr pruebas de esters para el wroker
 ```sudo docker compose -f worker-load-tests.yml  up --build```
