@@ -1,4 +1,57 @@
+# Ignora los archivos de configuración del IDE
 .idea/
 backend/.idea/
+
+# Ignora los archivos de configuración de macOS
 .DS_Store
-# .env*
+
+# Ignora los archivos de Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Ignora los archivos específicos de Flask
+instance/
+.webassets-cache
+
+# Ignora los archivos de entorno virtual
+env/
+venv/
+ENV/
+
+# Ignora los archivos de base de datos
+*.sqlite
+
+# Ignora los archivos de registro
+*.log
+
+# Ignora los archivos de configuración local
+*.cfg
+*.ini
+*.json
+*.yaml
+*.yml
+
+/backend/uploads*
