@@ -11,7 +11,6 @@ gcloud beta compute instance-templates create ifpv-web-server \
  --maintenance-policy=TERMINATE \
  --provisioning-model=SPOT \
  --instance-termination-action=STOP \
- --service-account=511428222899-compute@developer.gserviceaccount.com \
  --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
  --create-disk=boot=yes,device-name=ifpv-web-server,image=projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307b,mode=rw,size=10,type=pd-balanced,auto-delete=yes \
  --no-shielded-secure-boot \
@@ -77,3 +76,21 @@ gcloud beta compute instance-groups managed set-autoscaling ifpv-group \
     --target-cpu-utilization=0.7 \
     --cool-down-period=60
 
+gcloud compute addresses create lb-ifpv-1 \
+    --ip-version=IPV4 \
+    --network-tier=PREMIUM \
+    --global
+	
+gcloud compute addresses describe lb-ifpv-1 \
+    --format="get(address)" \
+    --global	
+	
+gcloud compute health-checks create http http-basic-check \
+    --port 80 	
+	
+gcloud compute backend-services create web-backend-service \
+    --load-balancing-scheme=EXTERNAL \
+    --protocol=HTTP \
+    --port-name=http \
+    --health-checks=http-basic-check \
+    --global	
