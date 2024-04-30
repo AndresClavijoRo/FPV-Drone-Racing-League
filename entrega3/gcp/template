@@ -33,7 +33,7 @@ sudo apt-get install -y docker.io
 sudo apt-get install -y docker-compose
 
 # PASO 4 CLONAR REPOSITORIO
-git clone https://github.com/AndresClavijoRo/FPV-Drone-Racing-League.git -b load_balancer
+git clone https://github.com/AndresClavijoRo/FPV-Drone-Racing-League.git -b load_balancer_acr
 
 # PASO 5 INGRESAR A LA CARPETA DEL PROYECTO
 cd FPV-Drone-Racing-League/entrega3
