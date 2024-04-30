@@ -38,27 +38,31 @@ git clone https://github.com/AndresClavijoRo/FPV-Drone-Racing-League.git -b load
 # PASO 5 INGRESAR A LA CARPETA DEL PROYECTO
 cd FPV-Drone-Racing-League/entrega2
 
-# PASO 6 EJECUTAR DOCKER COMPOSE
-sudo docker-compose up -d
-'
+# PASO 6 Crear carpeta NFS
+mkdir -p /var/nfs/videos
 
-gcloud compute firewall-rules create ifpv-fw \
+# PASO 7 EJECUTAR DOCKER COMPOSE
+sudo docker-compose up -d'
+
+gcloud compute firewall-rules create ifpv-template-fw \
     --target-tags network-lb-tag-ifpv --allow tcp:8000
 
-
-gcloud beta compute health-checks create tcp ifpv-health-check \
+gcloud beta compute health-checks create http ifpv-health-check \
     --project=elated-coil-323901 \
-    --port=5000 \
+    --port=8000 \
     --proxy-header=NONE \
     --no-enable-logging \
     --check-interval=10 \
     --timeout=5 \
     --unhealthy-threshold=3 \
     --healthy-threshold=2 
+
 gcloud beta compute instance-groups managed create ifpv-group \
     --project=elated-coil-323901 \
     --base-instance-name=ifpv-group \
-    --template=projects/elated-coil-323901/regions/us-central1/instanceTemplates/ifpv-web-server --size=1 --zones=us-central1-c,us-central1-f,us-central1-b \
+    --template=projects/elated-coil-323901/regions/us-central1/instanceTemplates/ifpv-web-server \
+    --size=1 \
+    --zones=us-central1-c,us-central1-f,us-central1-b \
     --target-distribution-shape=EVEN \
     --instance-redistribution-type=PROACTIVE \
     --default-action-on-vm-failure=repair \
@@ -67,22 +71,132 @@ gcloud beta compute instance-groups managed create ifpv-group \
     --no-force-update-on-repair \
     --standby-policy-mode=manual \
     --list-managed-instances-results=PAGELESS 
+
 gcloud beta compute instance-groups managed set-autoscaling ifpv-group \
     --project=elated-coil-323901 \
     --region=us-central1 \
     --mode=on \
     --min-num-replicas=1 \
     --max-num-replicas=5 \
-    --target-cpu-utilization=0.7 \
-    --cool-down-period=60
+    --target-cpu-utilization=0.6 \
+    --cool-down-period=300
 
-gcloud compute addresses create lb-ifpv-1 \
+gcloud compute instance-groups set-named-ports ifpv-group \
+    --project=elated-coil-323901 \
+    --region=us-central1 \
+    --named-ports=http:8000
+
+/*********/
+
+#gcloud beta compute health-checks create http ipfv-lb-hc \
+#    --project=elated-coil-323901 \
+#    --region=us-central1 \
+#    --port=80 \
+#    --proxy-header=NONE \
+#    --no-enable-logging \
+#    --check-interval=10 \
+#    --timeout=5 \
+#    --unhealthy-threshold=3 \
+#    --healthy-threshold=2 
+
+gcloud beta compute health-checks create http ipfv-lb-hc \
+    --project=elated-coil-323901 \
+    --port=80 \
+    --proxy-header=NONE \
+    --no-enable-logging \
+    --check-interval=10 \
+    --timeout=5 \
+    --unhealthy-threshold=3 \
+    --healthy-threshold=2 \
+    --global
+
+
+#gcloud compute backend-services create ifpv-lb-backend \
+#    --protocol=HTTP \
+#    --port-name=http \
+#    --timeout=30s \
+#    --connection-draining-timeout=300s \
+#    --session-affinity=NONE \
+#    --locality-lb-policy=ROUND_ROBIN \
+#    --health-checks=ipfv-lb-hc \
+#    --region=us-central1 \
+#    --project=elated-coil-323901
+
+gcloud compute backend-services create ifpv-lb-backend \
+    --load-balancing-scheme=EXTERNAL \
+    --protocol=HTTP \
+    --port-name=http \
+    --timeout=30s \
+    --connection-draining-timeout=300s \
+    --session-affinity=NONE \
+    --health-checks=ipfv-lb-hc \
+    --project=elated-coil-323901 \
+    --global
+
+
+#gcloud compute backend-services add-backend ifpv-lb-backend \
+#    --project=elated-coil-323901 \
+#    --instance-group-region=us-central1 \
+#    --instance-group=ifpv-group \
+#    --balancing-mode=UTILIZATION \
+#    --max-utilization=0.8 \
+#    --capacity-scaler=1 
+
+gcloud compute backend-services add-backend ifpv-lb-backend \
+    --instance-group-region=us-central1 \
+    --instance-group=ifpv-group \
+    --balancing-mode=UTILIZATION \
+    --max-utilization=0.8 \
+    --capacity-scaler=1 \
+    --project=elated-coil-323901 \
+    --global
+
+#gcloud compute url-maps create ifpv-lb \
+#    --project=elated-coil-323901 \
+#    --region=us-central1 \
+#    --default-service=ifpv-lb-backend 
+
+gcloud compute url-maps create ifpv-lb \
+    --default-service=ifpv-lb-backend \
+    --project=elated-coil-323901 \
+    --global
+
+#gcloud compute target-http-proxies create ifpv-lb-target-proxy \
+#    --project=elated-coil-323901 \
+#    --region=us-central1 \
+#    --url-map=ifpv-lb
+
+gcloud compute target-http-proxies create ifpv-lb-target-proxy \
+    --url-map=ifpv-lb \
+    --project=elated-coil-323901 \
+    --global
+
+gcloud compute addresses create lb-ifpv-addr \
     --ip-version=IPV4 \
     --network-tier=PREMIUM \
     --global
 	
-gcloud compute addresses describe lb-ifpv-1 \
-    --format="get(address)" \
+#gcloud compute addresses describe lb-ifpv-addr \
+#    --format="get(address)" \
+#    --global	
+	
+
+#gcloud compute forwarding-rules create ifpv-lb-forwarding-rule \
+#    --project=elated-coil-323901 \
+#    --region=us-central1 \
+#    --network=default \
+#    --address=lb-ifpv-addr \
+#    --target-http-proxy=ifpv-lb-target-proxy \
+#    --ports=80 
+
+gcloud compute forwarding-rules create ifpv-lb-forwarding-rule \
+    --load-balancing-scheme=EXTERNAL \
+    --address=lb-ifpv-addr \
+    --target-http-proxy=ifpv-lb-target-proxy \
+    --ports=80 \
+    --project=elated-coil-323901 \
+    --global
+
     --global	
 	
 gcloud compute health-checks create http http-basic-check \
