@@ -21,7 +21,7 @@ gcloud beta compute instance-templates create ifpv-web-server \
  --metadata=startup-script='
 #!/bin/bash
 # PASO 0 ACTUALIZAR REPOSITORIOS
-apt-get update
+sudo apt-get update
 
 # PASO 1 INSTALA GIT
 sudo apt-get install -y git
@@ -36,7 +36,7 @@ sudo apt-get install -y docker-compose
 git clone https://github.com/AndresClavijoRo/FPV-Drone-Racing-League.git -b load_balancer
 
 # PASO 5 INGRESAR A LA CARPETA DEL PROYECTO
-cd FPV-Drone-Racing-League/entrega2
+cd FPV-Drone-Racing-League/entrega3
 
 # PASO 6 Crear carpeta NFS
 mkdir -p /var/nfs/videos
@@ -49,7 +49,9 @@ gcloud compute firewall-rules create ifpv-template-fw \
 
 gcloud beta compute health-checks create http ifpv-webservice-hc \
     --project=elated-coil-323901 \
+    --region=us-central1 \
     --port=8000 \
+    --request-path=/test \
     --proxy-header=NONE \
     --no-enable-logging \
     --check-interval=10 \
@@ -66,7 +68,7 @@ gcloud beta compute instance-groups managed create ifpv-group \
     --target-distribution-shape=EVEN \
     --instance-redistribution-type=PROACTIVE \
     --default-action-on-vm-failure=repair \
-    --health-check=projects/elated-coil-323901/global/healthChecks/ifpv-health-check \
+    --health-check=projects/elated-coil-323901/global/healthChecks/ifpv-webservice-hc \
     --initial-delay=300 \
     --no-force-update-on-repair \
     --standby-policy-mode=manual \
@@ -78,7 +80,7 @@ gcloud beta compute instance-groups managed set-autoscaling ifpv-group \
     --mode=on \
     --min-num-replicas=1 \
     --max-num-replicas=5 \
-    --target-cpu-utilization=0.6 \
+    --target-cpu-utilization=0.75 \
     --cool-down-period=300
 
 gcloud compute instance-groups set-named-ports ifpv-group \
@@ -87,6 +89,14 @@ gcloud compute instance-groups set-named-ports ifpv-group \
     --named-ports=http:8000
 
 /*********/
+
+gcloud compute firewall-rules create ifpv-allow-health-check \
+  --network=default \
+  --action=allow \
+  --direction=ingress \
+  --source-ranges=10.218.0.0/20,34.78.0.0/16 \
+  --target-tags=allow-health-check \
+  --rules=tcp:8000
 
 #gcloud beta compute health-checks create http ipfv-lb-hc \
 #    --project=elated-coil-323901 \
@@ -102,6 +112,7 @@ gcloud compute instance-groups set-named-ports ifpv-group \
 gcloud beta compute health-checks create http ipfv-lb-hc \
     --project=elated-coil-323901 \
     --port=80 \
+    --request-path=/ifpv-lb-backend \
     --proxy-header=NONE \
     --no-enable-logging \
     --check-interval=10 \
@@ -109,7 +120,6 @@ gcloud beta compute health-checks create http ipfv-lb-hc \
     --unhealthy-threshold=3 \
     --healthy-threshold=2 \
     --global
-
 
 #gcloud compute backend-services create ifpv-lb-backend \
 #    --protocol=HTTP \
@@ -198,36 +208,3 @@ gcloud compute forwarding-rules create ifpv-lb-forwarding-rule \
     --global
 
 /**************************/
-gcloud compute addresses create lb-ifpv-addr \
-    --ip-version=IPV4 \
-    --network-tier=PREMIUM \
-    --global
-	
-    
-gcloud compute health-checks create http ipfv-lb-hc \
-    --port 80 	
-	
-gcloud compute backend-services create ifpv-lb-backend \
-    --load-balancing-scheme=EXTERNAL \
-    --protocol=HTTP \
-    --port-name=http \
-    --health-checks=ipfv-lb-hc \
-    --global	
-
-gcloud compute backend-services add-backend ifpv-lb-backend \
-  --instance-group=ifpv-group \
-  --region=us-central1
-
-gcloud compute url-maps create ifpv-map-http \
-  --default-service ifpv-lb-backend
-
-gcloud compute target-http-proxies create ifpv-lb-proxy \
-  --url-map=ifpv-map-http
-
-gcloud compute forwarding-rules create http-content-rule \
-  --load-balancing-scheme=EXTERNAL \
-  --address=lb-ifpv-addr \
-  --global \
-  --target-http-proxy=ifpv-lb-proxy \
-  --ports=80
-
