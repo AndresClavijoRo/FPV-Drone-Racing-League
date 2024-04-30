@@ -1,0 +1,17 @@
+services:
+  celery_worker:
+    container_name: celery_worker
+    volumes:
+      - upload-files:/var/nfs/videos
+    build: './backend'
+    restart: on-failure
+    command: celery -A make_celery  worker --loglevel INFO
+    env_file:
+      - .env
+volumes:
+  upload-files:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/var/nfs/videos'

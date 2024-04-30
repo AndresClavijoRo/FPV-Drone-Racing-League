@@ -1,0 +1,29 @@
+services:
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    restart: on-failure
+    ports:
+      - 8080:8080
+    volumes:
+      - ./nginx_nfs.conf:/etc/nginx/conf.d/default.conf     
+      - upload-files:/var/nfs/videos
+    depends_on:
+      app:
+        condition: service_started 
+  app:
+    container_name: backend_ifpv
+    command: gunicorn --workers=4  app:app  --bind 0.0.0.0:8000
+    volumes:
+      - upload-files:/var/nfs/videos
+    build: './backend'
+    restart: on-failure
+    env_file:
+      - .env
+volumes:
+  upload-files:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/var/nfs/videos'

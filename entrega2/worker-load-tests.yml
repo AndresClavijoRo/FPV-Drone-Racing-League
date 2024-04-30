@@ -1,0 +1,23 @@
+services:
+  celery_worker:
+    container_name: celery_worker
+    volumes:
+      - upload-files:/var/nfs/videos
+      - load-testing:/var/backend/load_testing
+    build: './backend'
+    command: flask load-test --total-tasks 20 --total-minutes 30
+    env_file:
+      - .env
+volumes:
+  upload-files:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/var/nfs/videos'
+  load-testing:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: 'var/backend/load_testing'

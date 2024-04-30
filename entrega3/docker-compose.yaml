@@ -1,0 +1,20 @@
+version: "3.7"
+services:
+  app:
+    container_name: backend_ifpv
+    volumes:
+      - upload-files:/var/nfs/videos
+    build: './backend'
+    command: gunicorn --workers=4  app:app  --bind 0.0.0.0:8000
+    restart: on-failure
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
+volumes:
+  upload-files:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/var/nfs/videos'
