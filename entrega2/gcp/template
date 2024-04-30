@@ -197,14 +197,6 @@ gcloud compute forwarding-rules create ifpv-lb-forwarding-rule \
     --project=elated-coil-323901 \
     --global
 
-    --global	
-	
-gcloud compute health-checks create http http-basic-check \
-    --port 80 	
-	
-gcloud compute backend-services create web-backend-service \
-    --load-balancing-scheme=EXTERNAL \
-    --protocol=HTTP \
-    --port-name=http \
-    --health-checks=http-basic-check \
-    --global	
+/**************************/
+
+
