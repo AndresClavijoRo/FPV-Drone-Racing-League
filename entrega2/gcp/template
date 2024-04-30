@@ -47,7 +47,7 @@ sudo docker-compose up -d'
 gcloud compute firewall-rules create ifpv-template-fw \
     --target-tags network-lb-tag-ifpv --allow tcp:8000
 
-gcloud beta compute health-checks create http ifpv-health-check \
+gcloud beta compute health-checks create http ifpv-webservice-hc \
     --project=elated-coil-323901 \
     --port=8000 \
     --proxy-header=NONE \
