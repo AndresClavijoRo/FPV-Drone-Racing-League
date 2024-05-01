@@ -7,6 +7,8 @@ from flask_restful import Resource
 from flask_jwt_extended import current_user, jwt_required
 from werkzeug.utils import secure_filename
 from google.cloud import storage
+from google import auth
+from google.auth.transport import requests
 
 from models import db, Task, TaskStatus
 from views.validaciones_video import validaciones_video
@@ -22,14 +24,21 @@ def upload_video_to_google_storage_cloud(file: "File", video_path: str) -> str:
 
 
 def get_signed_url(video_path: str) -> str:
+    credentials, project_id = auth.default()
     client = storage.Client()
     bucket = client.bucket(config.GOOGLE_STORAGE_BUCKET)
     blob = bucket.blob(video_path)
+    if credentials.token is None:
+        # Perform a refresh request to populate the access token of the
+        # current credentials.
+        credentials.refresh(requests.Request())
     return blob.generate_signed_url(
-        version="v4",
-        expiration=timedelta(hours=config.URL_HOURS_TO_EXPIRE),
-        method="GET",
-    )
+         version="v4",
+         expiration=timedelta(hours=config.URL_HOURS_TO_EXPIRE),
+         method="GET",
+        service_account_email=credentials.service_account_email,
+        access_token=credentials.token,
+     )
 
 
 def get_task_detail(task: Task) -> dict:
