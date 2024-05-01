@@ -49,7 +49,7 @@ gcloud compute firewall-rules create ifpv-template-fw \
 
 gcloud beta compute health-checks create http ifpv-webservice-hc \
     --project=elated-coil-323901 \
-    --region=us-central1 \
+    --global \
     --port=8000 \
     --request-path=/test \
     --proxy-header=NONE \
@@ -73,6 +73,7 @@ gcloud beta compute instance-groups managed create ifpv-group \
     --no-force-update-on-repair \
     --standby-policy-mode=manual \
     --list-managed-instances-results=PAGELESS
+
 
 gcloud beta compute instance-groups managed set-autoscaling ifpv-group \
     --project=elated-coil-323901 \
