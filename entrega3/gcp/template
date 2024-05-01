@@ -2,23 +2,23 @@ gcloud auth list
 
 gcloud config set project elated-coil-323901
 
-gcloud beta compute instance-templates create ifpv-web-server \
- --project=elated-coil-323901 \
- --machine-type=e2-small \
- --network-interface=network=default,network-tier=PREMIUM \
- --instance-template-region=us-central1 \
- --no-restart-on-failure \
- --maintenance-policy=TERMINATE \
- --provisioning-model=SPOT \
- --instance-termination-action=STOP \
- --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
- --create-disk=boot=yes,device-name=ifpv-web-server,image=projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307b,mode=rw,size=10,type=pd-balanced,auto-delete=yes \
- --no-shielded-secure-boot \
- --shielded-vtpm \
- --shielded-integrity-monitoring \
- --reservation-affinity=any \
- --tags=network-lb-tag-ifpv \
- --metadata=startup-script='
+gcloud compute instances create ifpv-web-server-intance \
+    --zone=us-central1-a \
+    --machine-type=e2-small \
+    --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default \
+    --no-restart-on-failure \
+    --maintenance-policy=TERMINATE \
+    --provisioning-model=SPOT \
+    --instance-termination-action=STOP \
+    --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
+    --create-disk=boot=yes,device-name=ifpv-web-server-intance,image=projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307b,mode=rw,size=10,type=projects/elated-coil-323901/zones/us-central1-a/diskTypes/pd-balanced,auto-delete=no \
+    --no-shielded-secure-boot \
+    --shielded-vtpm \
+    --shielded-integrity-monitoring \
+    --labels=goog-ec-src=vm_add-gcloud \
+    --reservation-affinity=any \
+    --tags=network-lb-tag-ifpv \
+    --metadata=startup-script='
 #!/bin/bash
 # PASO 0 ACTUALIZAR REPOSITORIOS
 sudo apt-get update
@@ -44,14 +44,84 @@ mkdir -p /var/nfs/videos
 # PASO 7 EJECUTAR DOCKER COMPOSE
 sudo docker-compose up -d'
 
+gcloud compute images create ifpv-web-server-image \
+    --project=elated-coil-323901 \
+    --source-disk=ifpv-web-server-intance \
+    --source-disk-zone=us-central1-a \
+    --storage-location=us
+
+gcloud beta compute instance-templates create ifpv-web-server-intance-template \
+    --project=elated-coil-323901 \
+    --machine-type=e2-small \
+    --network-interface=network=default,network-tier=PREMIUM \
+    --instance-template-region=us-central1 \
+    --no-restart-on-failure \
+    --maintenance-policy=TERMINATE \
+    --provisioning-model=SPOT \
+    --instance-termination-action=STOP \
+    --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
+    --tags=network-lb-tag-ifpv \
+    --create-disk=auto-delete=yes,boot=yes,device-name=ifpv-web-server-intance-template,image=projects/elated-coil-323901/global/images/ifpv-web-server-image,mode=rw,size=10,type=pd-balanced \
+    --no-shielded-secure-boot \
+    --shielded-vtpm \
+    --shielded-integrity-monitoring \
+    --reservation-affinity=any \
+    --metadata=startup-script='
+#!/bin/bash
+# INICIA LOS CONTENEDORES
+sudo docker start $(docker ps -a -q)
+    '
+
+# gcloud beta compute instance-templates create ifpv-web-server-instance \
+#  --project=elated-coil-323901 \
+#  --machine-type=e2-small \
+#  --network-interface=network=default,network-tier=PREMIUM \
+#  --instance-template-region=us-central1 \
+#  --no-restart-on-failure \
+#  --maintenance-policy=TERMINATE \
+#  --provisioning-model=SPOT \
+#  --instance-termination-action=STOP \
+#  --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
+#  --create-disk=boot=yes,device-name=ifpv-web-server-instance,image=projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307b,mode=rw,size=10,type=pd-balanced,auto-delete=yes \
+#  --no-shielded-secure-boot \
+#  --shielded-vtpm \
+#  --shielded-integrity-monitoring \
+#  --reservation-affinity=any \
+#  --tags=network-lb-tag-ifpv \
+#  --metadata=startup-script='
+# #!/bin/bash
+# # PASO 0 ACTUALIZAR REPOSITORIOS
+# sudo apt-get update
+
+# # PASO 1 INSTALA GIT
+# sudo apt-get install -y git
+
+# # PASO 2 INSTALAR DOCKER
+# sudo apt-get install -y docker.io
+
+# # PASO 3 INSTALAR DOCKER COMPOSE
+# sudo apt-get install -y docker-compose
+
+# # PASO 4 CLONAR REPOSITORIO
+# git clone https://github.com/AndresClavijoRo/FPV-Drone-Racing-League.git -b load_balancer
+
+# # PASO 5 INGRESAR A LA CARPETA DEL PROYECTO
+# cd FPV-Drone-Racing-League/entrega3
+
+# # PASO 6 Crear carpeta NFS
+# mkdir -p /var/nfs/videos
+
+# # PASO 7 EJECUTAR DOCKER COMPOSE
+# sudo docker-compose up -d'
+
 gcloud compute firewall-rules create ifpv-template-fw \
-    --target-tags network-lb-tag-ifpv --allow tcp:8000
+    --target-tags network-lb-tag-ifpv --allow tcp:8080
 
 gcloud beta compute health-checks create http ifpv-webservice-hc \
     --project=elated-coil-323901 \
     --global \
-    --port=8000 \
-    --request-path=/test \
+    --port=8080 \
+    --request-path=/api/test \
     --proxy-header=NONE \
     --no-enable-logging \
     --check-interval=10 \
@@ -62,14 +132,14 @@ gcloud beta compute health-checks create http ifpv-webservice-hc \
 gcloud beta compute instance-groups managed create ifpv-group \
     --project=elated-coil-323901 \
     --base-instance-name=ifpv-group \
-    --template=projects/elated-coil-323901/regions/us-central1/instanceTemplates/ifpv-web-server \
+    --template=projects/elated-coil-323901/regions/us-central1/instanceTemplates/ifpv-web-server-intance-template \
     --size=1 \
     --zones=us-central1-c,us-central1-f,us-central1-b \
     --target-distribution-shape=EVEN \
     --instance-redistribution-type=PROACTIVE \
     --default-action-on-vm-failure=repair \
     --health-check=projects/elated-coil-323901/global/healthChecks/ifpv-webservice-hc \
-    --initial-delay=300 \
+    --initial-delay=60 \
     --no-force-update-on-repair \
     --standby-policy-mode=manual \
     --list-managed-instances-results=PAGELESS
@@ -81,13 +151,13 @@ gcloud beta compute instance-groups managed set-autoscaling ifpv-group \
     --mode=on \
     --min-num-replicas=1 \
     --max-num-replicas=5 \
-    --target-cpu-utilization=0.75 \
-    --cool-down-period=300
+    --target-cpu-utilization=0.60 \
+    --cool-down-period=60
 
 gcloud compute instance-groups set-named-ports ifpv-group \
     --project=elated-coil-323901 \
     --region=us-central1 \
-    --named-ports=http:8000
+    --named-ports=http:8080
 
 /*********/
 
@@ -97,7 +167,7 @@ gcloud compute firewall-rules create ifpv-allow-health-check \
   --direction=ingress \
   --source-ranges=10.218.0.0/20,34.78.0.0/16 \
   --target-tags=allow-health-check \
-  --rules=tcp:8000
+  --rules=tcp:8080
 
 #gcloud beta compute health-checks create http ipfv-lb-hc \
 #    --project=elated-coil-323901 \
@@ -126,7 +196,7 @@ gcloud compute backend-services create ifpv-lb-backend \
     --protocol=HTTP \
     --port-name=http \
     --timeout=30s \
-    --connection-draining-timeout=300s \
+    --connection-draining-timeout=60s \
     --session-affinity=NONE \
     --health-checks=ifpv-webservice-hc \
     --project=elated-coil-323901 \
@@ -170,12 +240,14 @@ gcloud compute target-http-proxies create ifpv-lb-target-proxy \
     --project=elated-coil-323901 \
     --global
 
-gcloud compute addresses create lb-ifpv-addr \
-    --ip-version=IPV4 \
-    --network-tier=PREMIUM \
-    --global
+## Crea la ip
+# gcloud compute addresses create lb-ifpv-addr \
+#     --ip-version=IPV4 \
+#     --network-tier=PREMIUM \
+#     --global
 
-#gcloud compute addresses describe lb-ifpv-addr \
+## verifica que exista la ip
+# gcloud compute addresses describe lb-ifpv-addr \
 #    --format="get(address)" \
 #    --global	
 	
@@ -192,7 +264,7 @@ gcloud compute forwarding-rules create ifpv-lb-forwarding-rule \
     --load-balancing-scheme=EXTERNAL \
     --address=lb-ifpv-addr \
     --target-http-proxy=ifpv-lb-target-proxy \
-    --ports=80 \
+    --ports=8080 \
     --project=elated-coil-323901 \
     --global
 
