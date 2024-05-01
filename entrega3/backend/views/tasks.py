@@ -1,10 +1,12 @@
 import os
 import uuid
+from datetime import datetime, timedelta
 
 from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import current_user, jwt_required
 from werkzeug.utils import secure_filename
+from google.cloud import storage
 
 from models import db, Task, TaskStatus
 from views.validaciones_video import validaciones_video
@@ -12,15 +14,34 @@ from celery_tasks import process_task
 import config
 
 
+def upload_video_to_google_storage_cloud(file: "File", video_path: str) -> str:
+    client = storage.Client()
+    blob = client.bucket(config.GOOGLE_STORAGE_BUCKET).blob(video_path)
+    blob.upload_from_file(file)
+    return blob.public_url
+
+
+def get_signed_url(video_path: str) -> str:
+    client = storage.Client()
+    bucket = client.bucket(config.GOOGLE_STORAGE_BUCKET)
+    blob = bucket.blob(video_path)
+    return blob.generate_signed_url(
+        version="v4",
+        expiration=timedelta(hours=config.URL_HOURS_TO_EXPIRE),
+        method="GET",
+    )
+
+
 def get_task_detail(task: Task) -> dict:
-    url = config.ROOT_SERVER_URL
     return {
         "id": task.id,
         "file_name": task.file_name,
         "status": task.status.value,
-        "uploaded_video_path": url + task.video_path,
+        "uploaded_video_path": get_signed_url(task.video_path),
         "processed_video_path": (
-            url + task.processed_video_path if task.processed_video_path else None
+            get_signed_url(task.processed_video_path)
+            if task.processed_video_path
+            else None
         ),
         "created_at": task.created_at.strftime("%Y-%m-%d %H:%M:%S"),
         "updated_at": (
@@ -35,7 +56,7 @@ def get_task_detail(task: Task) -> dict:
             task.processing_ended_at.strftime("%Y-%m-%d %H:%M:%S")
             if task.processing_ended_at
             else None
-        )
+        ),
     }
 
 
@@ -67,19 +88,16 @@ class TasksListView(Resource):
         if validaciones.valid is False:
             return {"mensaje": validaciones.mensaje}, 400
 
-        # Guarda el archivo de video
+        # Upload video to google storage cloud
         filename = secure_filename(video.filename)
-        path = f'{config.UPLOAD_FOLDER}/{uuid.uuid4()}'
-        video_path = f'{path}/{filename}'
-        if not os.path.exists(path):
-            os.makedirs(path)
-        video.save(video_path)
+        vide_path = f"{uuid.uuid4()}/{filename}"
+        upload_video_to_google_storage_cloud(video, vide_path)
         try:
             # Crea una nueva tarea
             task = Task(
                 created_by_id=current_user.id,
                 file_name=filename,
-                video_path=video_path,
+                video_path=vide_path,
                 status=TaskStatus.UPLOADED,
             )
             db.session.add(task)
@@ -111,7 +129,7 @@ class TaskView(Resource):
             return {"mensaje": "Tarea no encontrada"}, 404
         if task.status != TaskStatus.PROCESSED:
             return {"mensaje": "No se puede eliminar una tarea no procesada"}, 400
-    
+
         db.session.delete(task)
         db.session.commit()
 
@@ -120,5 +138,5 @@ class TaskView(Resource):
             file_path = os.path.join(folder_path, file)
             os.remove(file_path)
         os.rmdir(folder_path)
-       
+
         return {"mensaje": "Tarea eliminada exitosamente"}, 200
