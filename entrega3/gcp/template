@@ -110,18 +110,6 @@ gcloud compute firewall-rules create ifpv-allow-health-check \
 #    --unhealthy-threshold=3 \
 #    --healthy-threshold=2 
 
-gcloud beta compute health-checks create http ipfv-lb-hc \
-    --project=elated-coil-323901 \
-    --port=80 \
-    --request-path=/ifpv-lb-backend \
-    --proxy-header=NONE \
-    --no-enable-logging \
-    --check-interval=10 \
-    --timeout=5 \
-    --unhealthy-threshold=3 \
-    --healthy-threshold=2 \
-    --global
-
 #gcloud compute backend-services create ifpv-lb-backend \
 #    --protocol=HTTP \
 #    --port-name=http \
@@ -140,7 +128,7 @@ gcloud compute backend-services create ifpv-lb-backend \
     --timeout=30s \
     --connection-draining-timeout=300s \
     --session-affinity=NONE \
-    --health-checks=ipfv-lb-hc \
+    --health-checks=ifpv-webservice-hc \
     --project=elated-coil-323901 \
     --global
 
