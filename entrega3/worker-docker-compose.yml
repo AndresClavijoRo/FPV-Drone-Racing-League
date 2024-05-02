@@ -1,0 +1,8 @@
+services:
+  celery_worker:
+    container_name: celery_worker
+    build: './backend'
+    restart: on-failure
+    command: celery -A make_celery  worker --loglevel INFO
+    env_file:
+      - .env

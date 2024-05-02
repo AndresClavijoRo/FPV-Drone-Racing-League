@@ -149,9 +149,10 @@ class TaskView(Resource):
         db.session.commit()
 
         folder_path = os.path.dirname(task.video_path)
-        for file in os.listdir(folder_path):
-            file_path = os.path.join(folder_path, file)
-            os.remove(file_path)
-        os.rmdir(folder_path)
 
+        # Delete from cloud storage
+        client = storage.Client()
+        bucket = client.bucket(config.GOOGLE_STORAGE_BUCKET)
+        blobs = list(bucket.list_blobs(prefix=folder_path))
+        bucket.delete_blobs(blobs)
         return {"mensaje": "Tarea eliminada exitosamente"}, 200
