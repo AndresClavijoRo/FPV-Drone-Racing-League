@@ -25,7 +25,6 @@ from celery_tasks import process_task
 
 WAIT_PER_TAKS = 60
 MAX_CPU = 0.95 * 100
-MAX_DURATION = 10
 VIDEO_PATH = os.path.abspath("load_testing_video.mp4")
 BASE_PATH = "load_testing"
 
@@ -157,6 +156,7 @@ def run_scenary(
 
     save_stats = True
     too_much_cpu = False
+    MAX_DURATION = WAIT_PER_TAKS * total_tasks
 
     def save_cpu_and_memory_usage() -> bool:
         """Save CPU and memory usage
@@ -207,6 +207,7 @@ def run_scenary(
         stderr=subprocess.STDOUT,
         preexec_fn=os.setsid,
     )
+    start_at = datetime.datetime.now()
     try:
         # Wait for tasks to finish
         job = group(celery_tasks)
@@ -216,7 +217,7 @@ def run_scenary(
         while True:
             if result.ready():
                 break
-            if datetime.datetime.now() > end_at:
+            if (datetime.datetime.now()-start_at).total_seconds() > MAX_DURATION:
                 print("Kiling worker, too much time")
                 # Kill the worker
                 too_much_time = True
