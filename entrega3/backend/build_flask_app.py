@@ -41,7 +41,7 @@ def create_flask_app():
 
 def add_urls(app):
     api = Api(app,"/api")
-    api.add_resource(test.TestView, "/test")
+    # api.add_resource(test.TestView, "/test")
     api.add_resource(registro_usuario.RegistroUsuarioView, "/auth/signup")
     api.add_resource(login_usuario.LoginUsuarioView, "/auth/login")
     api.add_resource(tasks.TasksListView, "/tasks")
