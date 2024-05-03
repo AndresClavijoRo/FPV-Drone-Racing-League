@@ -96,6 +96,9 @@ class TasksListView(Resource):
         # Comprueba si el archivo de video está presente en la solicitud
         if "fileName" not in request.files:
             return {"mensaje": "No se encontró el archivo de video"}, 400
+        def is_it_true(value):
+            return value.lower() == 'true'
+        trigger_task = request.args.get("trigger_task", default=True, type=is_it_true)
         video = request.files["fileName"]
 
         validaciones = validaciones_video(video)
@@ -117,7 +120,8 @@ class TasksListView(Resource):
             )
             db.session.add(task)
             db.session.commit()
-            process_task.delay(task.id)
+            if trigger_task:
+                process_task.delay(task.id)
             return get_task_detail(task), 201
         except Exception as e:
             return {"mensaje": str(e)}, 500

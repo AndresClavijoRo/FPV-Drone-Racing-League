@@ -2,6 +2,6 @@ services:
   celery_worker:
     container_name: celery_worker
     build: './backend'
-    command: flask load-test --total-tasks 20 --total-minutes 30
+    command: flask load-test --total-tasks 20 --total-minutes 20
     env_file:
       - .env
