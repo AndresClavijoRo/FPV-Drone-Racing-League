@@ -1,7 +1,7 @@
 # Executes load testing on the celery server
 # Usage: python3 load_testing.py number_of_tasks
 import threading
-from typing import List
+from typing import List, Tuple
 import datetime
 import os
 import logging
@@ -139,8 +139,12 @@ def write_results(
 
 
 def run_scenary(
-    flask_app, total_tasks: int, concurrency: int, folder_path: str
-) -> bool:
+    flask_app,
+    total_tasks: int,
+    concurrency: int,
+    folder_path: str,
+    end_at: datetime.datetime,
+) -> Tuple[bool, datetime.datetime]:
     print(
         "starting scenary with concurrency",
         concurrency,
@@ -150,8 +154,6 @@ def run_scenary(
         total_tasks,
         "tasks",
     )
-
-    MAX_WAIT = WAIT_PER_TAKS * total_tasks
 
     save_stats = True
     too_much_cpu = False
@@ -184,7 +186,10 @@ def run_scenary(
     flask_app.extensions["celery"].control.purge()
 
     #  Create tasks
+    before = datetime.datetime.now()
     tasks_ids = create_task(folder_path, total_tasks)
+    after = datetime.datetime.now()
+    end_at = end_at + (after - before)
     # queue tasks to celery
     celery_tasks = []
     for task_id in tasks_ids:
@@ -207,12 +212,11 @@ def run_scenary(
         job = group(celery_tasks)
         result = job.apply_async()
         result.save()
-        start_at = datetime.datetime.now()
         too_much_time = False
         while True:
             if result.ready():
                 break
-            if (datetime.datetime.now() - start_at).seconds > MAX_WAIT:
+            if datetime.datetime.now() > end_at:
                 print("Kiling worker, too much time")
                 # Kill the worker
                 too_much_time = True
@@ -245,28 +249,30 @@ def run_scenary(
     if failed_tasks:
         print("Failed tasks for scenary with concurrency", concurrency)
     if too_much_time:
-        print("Task are taken more than 60 seconds", concurrency)
-    return not too_much_cpu and not failed_tasks and not too_much_time
+        print("Task timed out", concurrency)
+    return not too_much_cpu and not failed_tasks and not too_much_time, end_at
 
 
 def load_test(flask_app, total_tasks: int, total_minutes: int):
     start_at = datetime.datetime.now()
+    end_at = start_at + datetime.timedelta(minutes=total_minutes)
     print(f"Starting load testing at {start_at} and max {total_minutes} minutes")
     # Create results folder
     folder_path = f"{BASE_PATH}/{start_at.isoformat()}"
     os.makedirs(folder_path, exist_ok=True)
     initial_concurrency = 1
-    keep_going = run_scenary(flask_app, total_tasks, initial_concurrency, folder_path)
+    keep_going, end_at = run_scenary(
+        flask_app, total_tasks, initial_concurrency, folder_path, end_at
+    )
     #  Check if need to increment concurrency
     while keep_going:
-        initial_concurrency += 1
-        keep_going = run_scenary(
-            flask_app, total_tasks, initial_concurrency, folder_path
-        )
-        if datetime.datetime.now() - start_at > datetime.timedelta(
-            minutes=total_minutes
-        ):
+        if datetime.datetime.now() > end_at:
             break
+        initial_concurrency += 1
+        keep_going, end_at = run_scenary(
+            flask_app, total_tasks, initial_concurrency, folder_path, end_at
+        )
+
     end_at = datetime.datetime.now()
     # Upload test results to the bucket for convenience
     upload_from_directory(folder_path, folder_path)
