@@ -18,12 +18,13 @@ tasks = []
 def callback(message:pubsub_v1.subscriber.message.Message)->None:
     print(f"Received message {message}.")
     if len(tasks) >= MAX_CONCURRENCY:
+        message.nack()
         print("Max concurrency reached. Skipping message.")
         return
-    task_id = int(message.data.decode())
-    tasks.append(task_id)
-    message.ack()
     try:
+        task_id = int(message.data.decode())
+        tasks.append(task_id)
+        message.ack()
         with app.app_context():
             from process_task import process_task
             process_task(task_id)
