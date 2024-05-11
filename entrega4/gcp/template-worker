@@ -1,0 +1,101 @@
+gcloud auth list
+
+gcloud config set project elated-coil-323901
+
+gcloud compute instances create ifpv-web-worker-intance \
+    --project=elated-coil-323901 \
+    --zone=us-central1-a \
+    --machine-type=e2-small \
+    --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default \
+    --maintenance-policy=MIGRATE \
+    --provisioning-model=STANDARD \
+    --service-account=service-account-base-de-datos@elated-coil-323901.iam.gserviceaccount.com \
+    --scopes=https://www.googleapis.com/auth/cloud-platform \
+    --create-disk=boot=yes,device-name=instance-20240503-045142,image=projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240426,mode=rw,size=10,type=projects/elated-coil-323901/zones/us-central1-a/diskTypes/pd-balanced,auto-delete=no \
+    --no-shielded-secure-boot \
+    --shielded-vtpm \
+    --shielded-integrity-monitoring \
+    --labels=goog-ec-src=vm_add-gcloud \
+    --reservation-affinity=any \
+    --tags=network-lb-tag-ifpv \
+    --metadata=startup-script='
+#!/bin/bash
+# PASO 0 ACTUALIZAR REPOSITORIOS
+sudo apt-get update
+
+# PASO 1 INSTALA GIT
+sudo apt-get install -y git
+
+# PASO 2 INSTALAR DOCKER
+sudo apt-get install -y docker.io
+
+# PASO 3 INSTALAR DOCKER COMPOSE
+sudo apt-get install -y docker-compose
+
+# PASO 4 CLONAR REPOSITORIO DE PROMETHEUS
+wget https://github.com/prometheus/node_exporter/releases/download/v1.8.0/node_exporter-1.8.0.linux-amd64.tar.gz
+tar xvfz node_exporter-*.*-amd64.tar.gz
+
+# PASO 5 CLONAR REPOSITORIO
+git clone https://github.com/AndresClavijoRo/FPV-Drone-Racing-League.git -b pub_sub
+
+# PASO 6 INGRESAR A LA CARPETA DEL PROYECTO
+cd FPV-Drone-Racing-League/entrega4
+
+# PASO 7 Crear carpeta NFS
+mkdir -p /var/nfs/videos
+
+# PASO 8 EJECUTAR DOCKER COMPOSE
+sudo docker-compose -f worker-docker-compose.yml up -d
+'
+
+gcloud compute images create ifpv-worker-server-image \
+    --project=elated-coil-323901 \
+    --source-disk=ifpv-web-worker-intance \
+    --source-disk-zone=us-central1-a \
+    --storage-location=us
+
+gcloud beta compute instance-templates create ifpv-worker-server-intance-template \
+    --project=elated-coil-323901 \
+    --machine-type=e2-small \
+    --network-interface=network=default,network-tier=PREMIUM \
+    --instance-template-region=us-central1 \
+    --no-restart-on-failure \
+    --provisioning-model=STANDARD \
+    --scopes=https://www.googleapis.com/auth/cloud-platform \
+    --tags=network-lb-tag-ifpv \
+    --create-disk=auto-delete=yes,boot=yes,device-name=ifpv-worker-server-intance-template,image=projects/elated-coil-323901/global/images/ifpv-worker-server-image,mode=rw,size=10,type=pd-balanced \
+    --no-shielded-secure-boot \
+    --shielded-vtpm \
+    --shielded-integrity-monitoring \
+    --reservation-affinity=any \
+    --metadata=startup-script='
+#!/bin/bash
+# INICIA LOS CONTENEDORES
+sudo docker start $(docker ps -a -q)
+
+cd node_exporter-*.*-amd64
+./node_exporter
+    '
+
+gcloud beta compute instance-groups managed create ifpv-workers-group \
+    --project=elated-coil-323901 \
+    --base-instance-name=ifpv-workers-group \
+    --template=projects/elated-coil-323901/regions/us-central1/instanceTemplates/ifpv-worker-server-intance-template \
+    --size=1 \
+    --zone=us-central1-c \
+    --default-action-on-vm-failure=repair \
+    --no-force-update-on-repair \
+    --standby-policy-mode=manual \
+    --list-managed-instances-results=PAGELESS
+
+gcloud beta compute instance-groups managed set-autoscaling ifpv-workers-group \
+    --project=elated-coil-323901 \
+    --zone=us-central1-c \
+    --mode=on \
+    --min-num-replicas=1 \
+    --max-num-replicas=3 \
+    --stackdriver-metric-filter=resource.type\ =\ pubsub_subscription\ AND\ resource.labels.subscription_id\ =\ \"task_processing\" \
+    --update-stackdriver-metric=pubsub.googleapis.com/subscription/num_undelivered_messages \
+    --stackdriver-metric-single-instance-assignment=5.0 \
+    --cool-down-period=60
