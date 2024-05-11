@@ -41,7 +41,7 @@ def upload_video_to_google_storage_cloud(video_path):
 
 def process_task(task_id: int):
     task: Task = Task.query.get(task_id)
-    if not task:
+    if not task or task.status != TaskStatus.UPLOADED:
         logger.error(f"Task with id {task_id} not found")
         return
     file_path = task.video_path
