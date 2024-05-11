@@ -1,0 +1,9 @@
+version: "3.7"
+services:
+  celery_worker:
+    container_name: celery_worker
+    build: './backend'
+    restart: on-failure
+    command: python sub_listener.py
+    env_file:
+      - .env
