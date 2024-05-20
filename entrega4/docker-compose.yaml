@@ -1,20 +1,20 @@
 version: "3.7"
 services:
-  app:
-    platform: linux/amd64
-    container_name: backend_ifpv
-    command: gunicorn --workers=4  app:app --bind 0.0.0.0:8080 --worker-connections=20
-    build: './backend'
-    restart: on-failure
-    env_file:
-      - .env
-  # nginx:
-  #   container_name: nginx
-  #   image: nginx:latest
+  # app:
+  #   platform: linux/amd64
+  #   container_name: backend_ifpv
+  #   command: gunicorn --workers=4  app:app --bind 0.0.0.0:8080 --worker-connections=20
+  #   build: './backend'
   #   restart: on-failure
-  #   ports:
-  #     - 8080:8080
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/conf.d/default.conf     
-  #   depends_on:
-  #     - app
+  #   env_file:
+  #     - .env
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    restart: on-failure
+    ports:
+      - 8080:8080
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf     
+    # depends_on:
+    #   - app
