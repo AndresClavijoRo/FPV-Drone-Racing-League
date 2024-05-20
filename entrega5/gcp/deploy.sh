@@ -18,3 +18,18 @@ gcloud run deploy backend5 \
 --project=elated-coil-323901
 
 
+https://backend5-jui7h7vh3a-uc.a.run.app/
+
+gcloud run deploy worker \
+--image=us-central1-docker.pkg.dev/elated-coil-323901/vinilos-app/backedn5 \
+--no-allow-unauthenticated \
+--port=8080 \
+--service-account=429089580341-compute@developer.gserviceaccount.com \
+--min-instances=1 \
+--max-instances=10 \
+--no-cpu-throttling \
+--region=us-central1 \
+--project=elated-coil-323901
+
+
+https://worker-jui7h7vh3a-uc.a.run.app

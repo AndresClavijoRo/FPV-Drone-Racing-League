@@ -4,6 +4,8 @@ FROM python:3.10
 RUN mkdir -p /var/nfs/videos
 # Set the working directory in the container to /backend
 WORKDIR /backend
+#Install ffmpeg
+RUN apt-get update -y && apt-get install ffmpeg  -y 
 
 ADD ./requirements.txt /backend/requirements.txt
 # Install any needed packages specified in requirements.txt
@@ -13,8 +15,6 @@ ADD . /backend
 # Make port 8000 available to the world outside this container
 EXPOSE 8080
 
-#Install ffmpeg
-RUN apt-get update -y && apt-get install ffmpeg  -y 
 ADD . /backend
 # Make port 8000 available to the world outside this container
 EXPOSE 8080
