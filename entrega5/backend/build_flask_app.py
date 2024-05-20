@@ -6,7 +6,7 @@ from flask_restful import Api
 
 import config as config
 from models import User
-from views import registro_usuario, test, login_usuario, tasks
+from views import registro_usuario, test, login_usuario, tasks, process_tasks
 
 
 def create_flask_app():
@@ -37,5 +37,6 @@ def add_urls(app):
     api.add_resource(login_usuario.LoginUsuarioView, "/auth/login")
     api.add_resource(tasks.TasksListView, "/tasks")
     api.add_resource(tasks.TaskView, "/tasks/<int:task_id>")
+    api.add_resource(process_tasks.PorcessTaskView, "/protected/process_taks")
 
 
