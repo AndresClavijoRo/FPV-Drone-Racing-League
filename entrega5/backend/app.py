@@ -3,7 +3,6 @@ import click
 from build_flask_app import create_flask_app
 from models import db
 from load_testing import load_test
-
 app = None
 
 app = create_flask_app()

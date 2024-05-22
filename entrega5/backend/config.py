@@ -23,3 +23,4 @@ URL_HOURS_TO_EXPIRE = int(os.getenv("URL_HOURS_TO_EXPIRE", "1"))
 # Pub/Sub
 PUB_TOPIC_NAME = os.getenv("PUB_TOPIC_NAME", "projects/elated-coil-323901/topics/task_processing")
 SUB_NAME=os.getenv("SUB_NAME", "projects/elated-coil-323901/subscriptions/task_processing")
+AS_WORKER = os.getenv("AS_WORKER", "True")
