@@ -126,9 +126,12 @@ def write_results(
 def wait_for_results(task_ids:List[int],end_at:datetime.datetime):
     """Use the database to check if all task are completed."""
     while datetime.datetime.now() < end_at:
+        db.session.close()
         tasks = Task.query.filter(Task.id.in_(task_ids)).all()
-        if all(task.status == TaskStatus.PROCESSED for task in tasks):
+        task_completed =[task.status == TaskStatus.PROCESSED for task in tasks]
+        if all(task_completed):
             return
+        print("Completed",task_completed.count(True), "of", len(task_completed))
         time.sleep(5)
 
 def load_test( total_tasks: int, total_minutes: int):
@@ -142,9 +145,10 @@ def load_test( total_tasks: int, total_minutes: int):
     # Publish results to google
     for task_id in task_ids:
         publish_task(task_id)
+    print(task_ids)
     end_at = datetime.datetime.now() + datetime.timedelta(minutes=total_minutes)
     # Wait for results
-    wait_for_results(task_ids, end_at)
+    wait_for_results([190419, 190420], end_at)
     # Write csv
     write_results(folder_path, task_ids)
     delete_tasks(task_ids)
