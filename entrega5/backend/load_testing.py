@@ -126,6 +126,7 @@ def write_results(
 def wait_for_results(task_ids:List[int],end_at:datetime.datetime):
     """Use the database to check if all task are completed."""
     while datetime.datetime.now() < end_at:
+        print("Waiting for results", (end_at - datetime.datetime.now()).total_seconds())
         db.session.close()
         tasks = Task.query.filter(Task.id.in_(task_ids)).all()
         task_completed =[task.status == TaskStatus.PROCESSED for task in tasks]
@@ -148,7 +149,7 @@ def load_test( total_tasks: int, total_minutes: int):
     print(task_ids)
     end_at = datetime.datetime.now() + datetime.timedelta(minutes=total_minutes)
     # Wait for results
-    wait_for_results([190419, 190420], end_at)
+    wait_for_results(task_ids, end_at)
     # Write csv
     write_results(folder_path, task_ids)
     delete_tasks(task_ids)
