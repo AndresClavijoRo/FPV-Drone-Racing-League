@@ -1,8 +1,8 @@
-version: "3.7"
 services:
   app:
+    platform: linux/amd64
     container_name: backend_ifpv
-    command: gunicorn --workers=4  app:app --bind 0.0.0.0:8000 --worker-connections=2000
+    command: gunicorn --workers=4  app:app --bind 0.0.0.0:8000 --worker-connections=20
     build: './backend'
     restart: on-failure
     env_file:

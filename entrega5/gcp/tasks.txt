@@ -1,0 +1,9 @@
+For worker ensure CPU allocation and minumum number of instances (1) is always on
+
+https://cloud.google.com/run/docs/configuring/cpu-allocation
+
+
+Create artifact from cod for the backend
+https://docs.deno.com/runtime/manual/advanced/deploying_deno/google_cloud_run
+
+Create artifact for the worker
